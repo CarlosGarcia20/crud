@@ -1,54 +1,29 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Supabase } from '../../../shared/services/supabase';
-import { from, Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root',
 })
 
-export class UsuariosServices {
-  private supabase = inject(Supabase).cliente
+export class UsuariosService {
+  private http = inject(HttpClient);
+  private apiUrl = environment.apiUrl;
 
-  obtenerUsuarios(): Observable<any[]> {
-    const consulta = this.supabase
-      .from('usuarios')
-      .select('*')
-      .order('id', { ascending: true });
+  obtenerEmpleados(): Observable<any> {
+    return this.http.get(`${this.apiUrl}empleados`)
+  } 
 
-    return from(consulta).pipe(
-      map(res => res.data || [])
-    )
+  crearEmpleado(datosFormulario: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}empleados`, datosFormulario);
   }
 
-  crearUsuario(usuario: any): Observable<any> {
-    const consulta = this.supabase
-      .from('usuarios')
-      .insert([usuario])
-      .select();
-
-    return from(consulta).pipe(
-      map(respuesta => respuesta.data?.[0])
-    );
+  actualizarEmpleado(idEmpleado: number, datosFormulario: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}empleados/${idEmpleado}`, datosFormulario);
   }
 
-  actualizarUsuario(id: number, datos: any): Observable<any> {
-    const consulta = this.supabase
-      .from('usuarios')
-      .update(datos)
-      .eq('id', id)
-      .select();
-
-    return from(consulta).pipe(
-      map(respuesta => respuesta.data?.[0])
-    );
-  }
-
-  eliminarUsuario(id: number): Observable<any> {
-    const consulta = this.supabase
-      .from('usuarios')
-      .delete()
-      .eq('id', id);
-
-    return from(consulta);
+  eliminarUsuario(idEmpleado: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}empleados/${idEmpleado}`)
   }
 }

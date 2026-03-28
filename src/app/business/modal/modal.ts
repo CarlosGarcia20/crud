@@ -14,10 +14,9 @@ export class Modal {
 
 	usuarioForm = new FormGroup({
 		nombre: new FormControl('', [Validators.required]),
-		email: new FormControl('', [Validators.required, Validators.email]),
-		rol: new FormControl('Usuario', [Validators.required])
+		correo: new FormControl('', [Validators.required, Validators.email]),
+		contraseña: new FormControl('', [Validators.required, Validators.minLength(6)]) 
 	});
-
 
 	constructor() {
 		effect(() => {
@@ -25,7 +24,7 @@ export class Modal {
 			if (usuario) {
 				this.usuarioForm.patchValue(usuario);
 			} else {
-				this.usuarioForm.reset({ rol: 'Usuario' });
+				this.usuarioForm.reset(); 
 			}
 		});
 	}
@@ -33,15 +32,14 @@ export class Modal {
 	guardar() {
 		if (this.usuarioForm.valid) {
 			this.usuarioGuardado.emit(this.usuarioForm.value);
-
-			this.usuarioForm.reset({ rol: 'Usuario' });
+			this.usuarioForm.reset();
 		} else {
 			this.usuarioForm.markAllAsTouched();
 		}
 	}
 
 	cancelar() {
-		this.usuarioForm.reset({ rol: 'Usuario' });
+		this.usuarioForm.reset();
 		this.cerrarModal.emit();
 	}
 }

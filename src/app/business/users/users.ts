@@ -1,72 +1,101 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Modal } from '../modal/modal';
-import { UsuariosServices } from '../core/services/users';
+import { UsuariosService } from '../core/services/users';
+import { AuthService } from '../../core/services/auth';
+import Swal from 'sweetalert2';
+import { Alerts } from '../../shared/services/alerts';
 
 @Component({
-  selector: 'app-users',
-  imports: [Modal],
-  templateUrl: './users.html',
-  styleUrl: './users.css',
+	selector: 'app-users',
+	imports: [Modal],
+	templateUrl: './users.html',
+	styleUrl: './users.css',
 })
 
 export class Users implements OnInit {
-  private usuariosService = inject(UsuariosServices)
+	usuarios: any[] = [];
 
-  modalAbierto = false;
-  usuarioSeleccionado: any = null;
+	private usuariosService = inject(UsuariosService)
+	private authService = inject(AuthService)
+	private alertService = inject(Alerts)
+	private cdr = inject(ChangeDetectorRef);
 
-  usuarios: any[] = [];
-  cargando = true;
+	modalAbierto = false;
+	usuarioSeleccionado: any = null;
 
-  ngOnInit(): void {
-    this.cargarUsuarios();
-  }
+	ngOnInit(): void {
+		this.cargarUsuarios();
+	}
 
-  cargarUsuarios() {
-    this.cargando = true;
-    this.usuariosService.obtenerUsuarios().subscribe({
-      next: (datos)  =>  {
-        console.log(datos);
-        
-        this.usuarios = datos;
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar usuarios', err)
-      }
-    });
-  }
+	cargarUsuarios() {
+		this.usuariosService.obtenerEmpleados().subscribe({
+			next: (datos: any) => {
+				this.usuarios = datos
+				this.cdr.detectChanges();
+			},
+			error: (err) => {
+				this.usuarios = [];
+				this.cdr.detectChanges();
+			}
+		})
+	}
 
-  abrirModal(usuario: any = null) {
-    this.usuarioSeleccionado = usuario ? {... usuario} : null
-    this.modalAbierto = true;
-  }
+	abrirModal(usuario: any = null) {
+		this.usuarioSeleccionado = usuario ? { ...usuario } : null
+		this.modalAbierto = true;
+	}
 
-  cerrarModal() {
-    this.modalAbierto = false;
-    this.usuarioSeleccionado = null;
-  }
+	cerrarModal() {
+		this.modalAbierto = false;
+		this.usuarioSeleccionado = null;
+	}
 
-  agregarUsuario(datosFormulario: any) {
-    if (this.usuarioSeleccionado) {
-      this.usuariosService.actualizarUsuario(this.usuarioSeleccionado.id, datosFormulario).subscribe(() => {
-        this.cargarUsuarios();
-        this.cerrarModal();
-      });
-    } else {
-      this.usuariosService.crearUsuario(datosFormulario).subscribe(() => {
-        this.cargarUsuarios();
-        this.cerrarModal();
-      });
-    }
-  }
+	cerrarSesion() {
+		this.authService.cerrarSesion();
+	}
 
-  eliminarUsuario(id: number) {
-    if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      this.usuariosService.eliminarUsuario(id).subscribe(() => {
-        this.cargarUsuarios(); 
-      });
-    }  
-  }
+	guardarUsuario(datosFormulario: any) {
+		if (this.usuarioSeleccionado) {
+			this.usuariosService.actualizarEmpleado(this.usuarioSeleccionado.id, datosFormulario).subscribe(() => {
+				this.alertService.mostrarExito("Información del empleado actualizada correctamente");
+				this.cargarUsuarios();
+				this.cerrarModal();
+			});
+		} else {
+			this.usuariosService.crearEmpleado(datosFormulario).subscribe({
+				next: (e) => {
+					this.alertService.mostrarExito("Empleado guardado correctamente");
+					this.cerrarModal();
+					this.cargarUsuarios();
+				},
+				error: (e) => {
+					this.alertService.mostrarError(e.error.mensaje)
+				}
+			})
+		}
+	}
+
+	eliminarUsuario(datosFormulario: any) {
+		Swal.fire({
+			title: `¿Estás seguro de que deseas eliminar a ${datosFormulario.nombre}?`,
+			icon: "warning",
+			theme: "dark",
+			showCancelButton: true,
+			confirmButtonColor: '#2563EB',
+			cancelButtonColor: "red"
+		}).then((result) => {
+			if (result.isConfirmed) {
+				this.usuariosService.eliminarUsuario(datosFormulario.id).subscribe({
+					next: (res) => {
+						this.cargarUsuarios();
+						this.alertService.mostrarExito("Empleado eliminado")
+					},
+					error: (err) => {
+						this.alertService.mostrarError(err.error.mensaje)
+					}
+				})
+			}
+		});
+	}
 
 }

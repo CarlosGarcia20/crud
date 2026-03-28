@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
 import { Router } from '@angular/router';
+import { Alerts } from '../../../shared/services/alerts';
 
 @Component({
    selector: 'app-login',
@@ -12,6 +13,7 @@ import { Router } from '@angular/router';
 
 export class Login {
    private authService = inject(AuthService);
+   private alertsService = inject(Alerts)
    private router = inject(Router);
 
    loginForm = new FormGroup({
@@ -26,17 +28,13 @@ export class Login {
          
          this.authService.login(email, password).subscribe({
             next: (e) => {
-               console.log(e)
+               this.authService.guardarToken(e.token)
                this.router.navigate(["/users"])
             },
             error: (e) => {
-               console.log(e)
+               this.alertsService.mostrarError(e.error.mensaje)
             }
          })
-
-      } else {
-         console.log('El formulario tiene errores')
-         this.loginForm.markAllAsTouched();
-      }   
+      }
    }
 }
